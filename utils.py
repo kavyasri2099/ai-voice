@@ -2,7 +2,7 @@ import sounddevice as sd
 import numpy as np
 import tempfile
 import wave
-from scipy.io import wavfile
+from scipy.io import wavfile 
 
 def record_audio_chunk(chunk_length=5, sample_rate=16000):
     """Record a chunk of audio using sounddevice."""
