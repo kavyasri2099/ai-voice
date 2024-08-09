@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 
 import wave
-import pyaudio
+import sounddevice as sd
 from scipy.io import wavfile
 import numpy as np
 
@@ -14,7 +14,6 @@ from langchain_groq import ChatGroq
 
 from gtts import gTTS
 import pygame
-
 
 load_dotenv()
 
@@ -28,26 +27,23 @@ def is_silence(data, max_amplitude_threshold=3000):
     return max_amplitude <= max_amplitude_threshold
 
 
-def record_audio_chunk(audio, stream, chunk_length=5):
+def record_audio_chunk(chunk_length=5):
     print("Recording...")
-    frames = []
-    # Calculate the number of chunks needed for the specified length of recording
-    # 16000 Hertz -> sufficient for capturing the human voice
-    # 1024 frames -> the higher, the higher the latency
-    num_chunks = int(16000 / 1024 * chunk_length)
 
-    # Record the audio data in chunks
-    for _ in range(num_chunks):
-        data = stream.read(1024)
-        frames.append(data)
+    # Set parameters for recording
+    samplerate = 16000  # Hertz
+    duration = chunk_length  # seconds
+    channels = 1  # Mono
+
+    # Record audio using sounddevice
+    audio_data = sd.rec(int(samplerate * duration), samplerate=samplerate, channels=channels, dtype='int16')
+    sd.wait()  # Wait until recording is finished
 
     temp_file_path = './temp_audio_chunk.wav'
     print("Writing...")
-    with wave.open(temp_file_path, 'wb') as wf:
-        wf.setnchannels(1)  # Mono channel
-        wf.setsampwidth(audio.get_sample_size(pyaudio.paInt16))  # Sample width
-        wf.setframerate(16000)  # Sample rate
-        wf.writeframes(b''.join(frames))  # Write audio frames
+
+    # Save the recorded audio data to a WAV file
+    wavfile.write(temp_file_path, samplerate, audio_data)
 
     # Check if the recorded chunk contains silence
     try:
@@ -75,6 +71,7 @@ def transcribe_audio(model, file_path):
         return results['text']
     else:
         return None
+
 
 def load_prompt():
     input_prompt = """
