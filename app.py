@@ -1,3 +1,5 @@
+streamlit run app.py
+
 import os
 import sounddevice as sd
 import streamlit as st
